@@ -93,7 +93,7 @@ export const syncLatestComics = async (page: number = 1, deepSync: boolean = fal
   for (const item of result.data.items) {
     let comic;
     if (deepSync) {
-      console.log(`[SYNC] Deep syncing: ${item.slug}`);
+      console.log(`[SYNC] Deep syncing (${page}): ${item.name} (${item.slug})`);
       comic = await syncComicDetails(item.slug);
       // Delay 1.5s after each comic detail fetch
       await new Promise((resolve) => setTimeout(resolve, 1500));
