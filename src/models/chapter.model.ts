@@ -35,5 +35,6 @@ const ChapterSchema = new Schema<IChapter>(
 
 // Tránh trùng chapter cho cùng 1 bộ truyện
 ChapterSchema.index({ comicId: 1, slug: 1 }, { unique: true });
+ChapterSchema.index({ comicId: 1, chapterNumber: -1 }); // Sorting chapters inside a comic
 
 export default model<IChapter>("Chapter", ChapterSchema);

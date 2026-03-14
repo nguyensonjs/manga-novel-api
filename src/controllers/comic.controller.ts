@@ -1,33 +1,41 @@
 import type { Request, Response } from "express";
 import { HTTP_STATUS } from "@/constants/http-status.ts";
-import * as comicService from "@/services/comic.service.ts";
+import * as ComicService from "@/services/comic.service.ts";
 
-export const syncLatest = async (req: Request, res: Response): Promise<void> => {
-  const page = Number(req.query.page) || 1;
-  const result = await comicService.syncLatestComics(page);
-  res.status(HTTP_STATUS.OK).json({
-    message: "Synchronization completed successfully",
-    ...result,
-  });
+export const syncLatest = async (req: Request, res: Response) => {
+  const result = await ComicService.syncLatestComics();
+  res.status(HTTP_STATUS.OK).json(result);
 };
 
-export const syncAll = async (req: Request, res: Response): Promise<void> => {
-  const startPage = Number(req.query.page) || 1;
-  // Chạy background sync
-  comicService.syncAllComics(startPage).catch(console.error);
-  
-  res.status(HTTP_STATUS.ACCEPTED).json({
-    message: "Full synchronization started in background",
-    startPage,
-  });
+export const syncAll = async (req: Request, res: Response) => {
+  const page = parseInt(req.query.page as string) || 1;
+  // Background job
+  ComicService.syncAllComics(page);
+  res.status(HTTP_STATUS.ACCEPTED).json({ message: "Full synchronization started in background", startPage: page });
 };
 
-export const getComics = async (req: Request, res: Response): Promise<void> => {
-  const comics = await comicService.getLocalComics(req.query);
-  res.status(HTTP_STATUS.OK).json(comics);
+export const syncNew = async (req: Request, res: Response) => {
+  // Background job
+  ComicService.syncNewOnly();
+  res.status(HTTP_STATUS.ACCEPTED).json({ message: "Smart sync (New Only) started in background" });
 };
 
-export const getComicBySlug = async (req: Request<{ slug: string }>, res: Response): Promise<void> => {
-  const comic = await comicService.getLocalComicBySlug(req.params.slug);
+export const listComics = async (req: Request, res: Response) => {
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 20;
+  const sort = typeof req.query.sort === "string" ? req.query.sort : "-updatedAt";
+
+  const result = await ComicService.getComics(page, limit, sort);
+  res.status(HTTP_STATUS.OK).json(result);
+};
+
+export const getComic = async (req: Request, res: Response) => {
+  const slug = req.params.slug as string;
+  const comic = await ComicService.getComicBySlug(slug);
+
+  if (!comic) {
+    return res.status(HTTP_STATUS.NOT_FOUND).json({ message: "Comic not found" });
+  }
+
   res.status(HTTP_STATUS.OK).json(comic);
 };

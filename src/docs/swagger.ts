@@ -827,8 +827,31 @@ export const swaggerSpec: OpenApiSpec = {
     },
     "/api/comics": {
       get: {
-        summary: "Get local comics list",
+        summary: "Get paginated local comics list",
         tags: ["Comics Local"],
+        parameters: [
+          {
+            name: "page",
+            in: "query",
+            required: false,
+            schema: { type: "integer" },
+            description: "Default: 1",
+          },
+          {
+            name: "limit",
+            in: "query",
+            required: false,
+            schema: { type: "integer" },
+            description: "Default: 20",
+          },
+          {
+            name: "sort",
+            in: "query",
+            required: false,
+            schema: { type: "string" },
+            description: "Default: -updatedAt",
+          },
+        ],
         responses: {
           "200": {
             description: "Successful operation",
@@ -838,7 +861,18 @@ export const swaggerSpec: OpenApiSpec = {
     },
     "/api/comics/sync": {
       post: {
-        summary: "Sync latest comics from OTruyen to local DB",
+        summary: "Sync latest comics page from OTruyen",
+        tags: ["Comics Local"],
+        responses: {
+          "200": {
+            description: "Synchronization results",
+          },
+        },
+      },
+    },
+    "/api/comics/sync-all": {
+      post: {
+        summary: "Start full background synchronization",
         tags: ["Comics Local"],
         parameters: [
           {
@@ -846,11 +880,23 @@ export const swaggerSpec: OpenApiSpec = {
             in: "query",
             required: false,
             schema: { type: "integer" },
+            description: "Start page",
           },
         ],
         responses: {
-          "200": {
-            description: "Synchronization results",
+          "202": {
+            description: "Synchronization started in background",
+          },
+        },
+      },
+    },
+    "/api/comics/sync-new": {
+      post: {
+        summary: "Start smart background synchronization (new comics only)",
+        tags: ["Comics Local"],
+        responses: {
+          "202": {
+            description: "Smart sync started in background",
           },
         },
       },

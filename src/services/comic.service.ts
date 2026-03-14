@@ -126,7 +126,7 @@ export const syncAllComics = async (startPage: number = 1) => {
     try {
       const result = await syncLatestComics(currentPage, true);
       totalSynced += result.totalSynced;
-      
+
       const { totalItems, totalItemsPerPage } = result.pagination;
       const totalPages = Math.ceil(totalItems / totalItemsPerPage);
 
@@ -142,7 +142,7 @@ export const syncAllComics = async (startPage: number = 1) => {
     } catch (error) {
       console.error(`[SYNC] Error at page ${currentPage}:`, (error as Error).message);
       currentPage++;
-      if (currentPage > 3000) hasNext = false; 
+      if (currentPage > 3000) hasNext = false;
     }
   }
 
@@ -150,14 +150,77 @@ export const syncAllComics = async (startPage: number = 1) => {
   return { totalSynced };
 };
 
-export const getLocalComics = async (query: any = {}) => {
-  return await Comic.find({ isDeleted: false, ...query }).sort({ updatedAt: -1 });
+export const syncNewOnly = async () => {
+  let currentPage = 1;
+  let totalSynced = 0;
+  let shouldContinue = true;
+
+  console.log("[SYNC] Starting smart update (New Only)...");
+
+  while (shouldContinue) {
+    const result = await fetchFromOTruyen<OTruyenResponse<{ items: OTruyenItem[]; params: { pagination: any } }>>(
+      "/danh-sach/truyen-moi",
+      { page: currentPage },
+      "GET"
+    );
+
+    if (!result.data || !result.data.items || result.data.items.length === 0) break;
+
+    for (const item of result.data.items) {
+      const existing = await Comic.findOne({ slug: item.slug }).lean();
+
+      // Nếu đã tồn tại và ngày cập nhật trùng khớp -> Dừng lại vì các truyện sau đó chắc chắn đã cũ
+      if (existing && existing.lastUpdateOTruyen?.getTime() === new Date(item.updatedAt).getTime()) {
+        console.log(`[SYNC] Reached existing comic: ${item.slug}. Stopping smart update.`);
+        shouldContinue = false;
+        break;
+      }
+
+      console.log(`[SYNC] Updating/Creating: ${item.slug}`);
+      await syncComicDetails(item.slug);
+      totalSynced++;
+
+      // Delay an toàn
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+    }
+
+    if (shouldContinue) {
+      currentPage++;
+      console.log(`[SYNC] Smart update moving to page ${currentPage}...`);
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+    }
+  }
+
+  console.log(`[SYNC] Smart update finished. Total updated: ${totalSynced}`);
+  return { totalSynced };
 };
 
-export const getLocalComicBySlug = async (slug: string) => {
+export const getComics = async (page: number = 1, limit: number = 20, sort: string = "-updatedAt") => {
+  const skip = (page - 1) * limit;
+
+  const [items, total] = await Promise.all([
+    Comic.find({ isDeleted: false }).sort(sort).skip(skip).limit(limit).lean(),
+    Comic.countDocuments({ isDeleted: false }),
+  ]);
+
+  return {
+    items,
+    pagination: {
+      totalItems: total,
+      totalPages: Math.ceil(total / limit),
+      currentPage: page,
+      limit,
+    },
+  };
+};
+
+export const getComicBySlug = async (slug: string) => {
   const comic = await Comic.findOne({ slug, isDeleted: false }).lean();
   if (!comic) return null;
 
-  const chapters = await Chapter.find({ comicId: comic._id } as any).sort({ chapterNumber: -1 }).lean();
+  const chapters = await Chapter.find({ comicId: comic._id } as any)
+    .sort({ chapterNumber: -1 })
+    .lean();
+
   return { ...comic, chapters };
 };

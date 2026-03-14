@@ -35,4 +35,11 @@ const ComicSchema = new Schema<IComic>(
   }
 );
 
+// Indexes for performance
+ComicSchema.index({ title: "text" }); // Text search
+ComicSchema.index({ updatedAt: -1 }); // Sorting by latest
+ComicSchema.index({ lastUpdateOTruyen: -1 });
+ComicSchema.index({ category: 1 });
+ComicSchema.index({ status: 1 });
+
 export default model<IComic>("Comic", ComicSchema);

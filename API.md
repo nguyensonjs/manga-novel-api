@@ -73,14 +73,25 @@ curl -X POST http://localhost:3333/api/comics/sync
 curl -X POST "http://localhost:3333/api/comics/sync?page=2"
 ```
 
-#### Lấy danh sách truyện trong DB local
+#### Get paginated comic list (English)
 ```bash
-curl http://localhost:3333/api/comics
+# Lấy trang 1, 20 truyện, sắp xếp theo ngày cập nhật mới nhất
+curl "http://localhost:3333/api/comics?page=1&limit=20&sort=-updatedAt"
 ```
 
-#### Xem chi tiết truyện (Local)
+#### Get comic details by slug (English)
 ```bash
 curl http://localhost:3333/api/comics/dao-hai-tac
+```
+
+#### Trigger Smart Sync (New only)
+```bash
+curl -X POST http://localhost:3333/api/comics/sync-new
+```
+
+#### Trigger Full Sync (Background)
+```bash
+curl -X POST "http://localhost:3333/api/comics/sync-all?page=1"
 ```
 
 ---
@@ -118,9 +129,11 @@ curl -X POST http://localhost:3333/api/documents/upload/chunk \
 | GET | `/api/otruyen/danh-sach/:type` | Proxy | DS theo loại |
 | GET | `/api/otruyen/truyen-tranh/:slug` | Proxy | Chi tiết truyện |
 | GET | `/api/otruyen/tim-kiem` | Proxy | Tìm kiếm truyện |
-| POST | `/api/comics/sync` | Comics | Đồng bộ truyện |
-| GET | `/api/comics` | Comics | DS truyện local |
-| GET | `/api/comics/:slug` | Comics | Chi tiết truyện local |
+| POST | `/api/comics/sync` | Comics | Sync latest page |
+| POST | `/api/comics/sync-all` | Comics | Full background sync |
+| POST | `/api/comics/sync-new` | Comics | Smart sync (New only) |
+| GET | `/api/comics` | Comics | Get paginated list |
+| GET | `/api/comics/:slug` | Comics | Get detail by slug |
 | POST | `/api/documents/upload` | Docs | Upload file |
 | POST | `/api/documents/upload/chunk` | Docs | Upload theo phần |
 | GET | `/api/documents/:id/view` | Docs | Xem file |
