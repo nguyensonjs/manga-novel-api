@@ -2,11 +2,15 @@ import type { Request, Response } from "express";
 import { HTTP_STATUS } from "@/constants/http-status.ts";
 import * as otruyenService from "@/services/otruyen.service.ts";
 import { HttpError } from "@/utils/http-error.ts";
+import type { OTruyenQuery } from "@/types/otruyen.ts";
 
 /**
  * Proxy function to forward requests to OTruyen API
  */
-export const proxyOTruyen = async (req: Request, res: Response): Promise<void> => {
+export const proxyOTruyen = async (
+  req: Request<any, any, any, OTruyenQuery>,
+  res: Response,
+): Promise<void> => {
   try {
     const data = await otruyenService.fetchFromOTruyen(
       req.path,
