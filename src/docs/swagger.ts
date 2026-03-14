@@ -75,9 +75,9 @@ type OpenApiSpec = {
 export const swaggerSpec: OpenApiSpec = {
   openapi: "3.0.3",
   info: {
-    title: "Node API Course",
+    title: "manga-novel-api",
     version: "1.0.0",
-    description: "Simple Bun + Express + TypeScript API documentation",
+    description: "Backend API for Manga & Novel website, powered by Bun + Express",
   },
   servers: [
     {
@@ -90,8 +90,16 @@ export const swaggerSpec: OpenApiSpec = {
       description: "Health check endpoints",
     },
     {
+      name: "Authentication",
+      description: "User registration and login",
+    },
+    {
       name: "Users",
-      description: "User registration, login, and sample user endpoints",
+      description: "User profile and management",
+    },
+    {
+      name: "OTruyen Proxy",
+      description: "Proxy endpoints for OTruyen API data",
     },
     {
       name: "Documents",
@@ -346,7 +354,7 @@ export const swaggerSpec: OpenApiSpec = {
     "/api/register": {
       post: {
         summary: "Register a new user",
-        tags: ["Users"],
+        tags: ["Authentication"],
         requestBody: {
           required: true,
           content: {
@@ -394,7 +402,7 @@ export const swaggerSpec: OpenApiSpec = {
     "/api/login": {
       post: {
         summary: "Login and receive a JWT token",
-        tags: ["Users"],
+        tags: ["Authentication"],
         requestBody: {
           required: true,
           content: {
@@ -535,6 +543,89 @@ export const swaggerSpec: OpenApiSpec = {
                 },
               },
             },
+          },
+        },
+      },
+    },
+    "/api/otruyen/home": {
+      get: {
+        summary: "Get home page data (OTruyen Proxy)",
+        tags: ["OTruyen Proxy"],
+        responses: {
+          "200": {
+            description: "Successful operation",
+          },
+        },
+      },
+    },
+    "/api/otruyen/danh-sach/{type}": {
+      get: {
+        summary: "Get list of comics by type (OTruyen Proxy)",
+        tags: ["OTruyen Proxy"],
+        parameters: [
+          {
+            name: "type",
+            in: "path",
+            required: true,
+            description: "Type: truyen-moi, sap-ra-mat, dang-phat-hanh, hoan-thanh",
+            schema: {
+              type: "string",
+            },
+          },
+          {
+            name: "page",
+            in: "query",
+            required: false,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: {
+          "200": {
+            description: "Successful operation",
+          },
+        },
+      },
+    },
+    "/api/otruyen/truyen-tranh/{slug}": {
+      get: {
+        summary: "Get comic details (OTruyen Proxy)",
+        tags: ["OTruyen Proxy"],
+        parameters: [
+          {
+            name: "slug",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+          },
+        ],
+        responses: {
+          "200": {
+            description: "Successful operation",
+          },
+        },
+      },
+    },
+    "/api/otruyen/tim-kiem": {
+      get: {
+        summary: "Search comics (OTruyen Proxy)",
+        tags: ["OTruyen Proxy"],
+        parameters: [
+          {
+            name: "keyword",
+            in: "query",
+            required: true,
+            schema: { type: "string" },
+          },
+          {
+            name: "page",
+            in: "query",
+            required: false,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: {
+          "200": {
+            description: "Successful operation",
           },
         },
       },
