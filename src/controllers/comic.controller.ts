@@ -14,7 +14,6 @@ export const syncAll = async (req: Request, res: Response) => {
   // Background job
   ComicService.syncAllComics(page).catch((err) => {
     logger.error(`[SYNC-ALL ERROR] ${err.message}`);
-    console.error(`[SYNC-ALL ERROR] ${err.message}`);
   });
   res.status(HTTP_STATUS.ACCEPTED).json({ message: "Full synchronization started in background", startPage: page });
 };

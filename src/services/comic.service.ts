@@ -95,7 +95,6 @@ export const syncLatestComics = async (page: number = 1, deepSync: boolean = fal
     let comic;
     if (deepSync) {
       logger.info(`[SYNC] Deep syncing (${page}): ${item.name} (${item.slug})`);
-      console.log(`[SYNC] Deep syncing (${page}): ${item.name} (${item.slug})`);
       comic = await syncComicDetails(item.slug);
       // Delay 1.5s after each comic detail fetch
       await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -123,7 +122,6 @@ export const syncAllComics = async (startPage: number = 1) => {
   let hasNext = true;
 
   logger.info(`[SYNC] Starting full deep sync from page ${startPage}...`);
-  console.log(`[SYNC] Starting full deep sync from page ${startPage}...`);
 
   while (hasNext) {
     try {
@@ -134,7 +132,6 @@ export const syncAllComics = async (startPage: number = 1) => {
       const totalPages = Math.ceil(totalItems / totalItemsPerPage);
 
       logger.info(`[SYNC] Page ${currentPage}/${totalPages} completed. Synced ${totalSynced} items so far.`);
-      console.log(`[SYNC] Page ${currentPage}/${totalPages} completed. Synced ${totalSynced} items so far.`);
 
       if (currentPage >= totalPages) {
         hasNext = false;
