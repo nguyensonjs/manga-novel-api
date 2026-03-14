@@ -1,4 +1,9 @@
-type EnvKey = "CORS_ORIGIN" | "JWT_SECRET" | "MONGODB_URI" | "PORT";
+type EnvKey =
+  | "CORS_ORIGIN"
+  | "JWT_SECRET"
+  | "MONGODB_URI"
+  | "PORT"
+  | "OTRUYEN_API_URL";
 
 const getEnv = (key: EnvKey, fallback?: string): string => {
   const value = process.env[key];
@@ -25,4 +30,5 @@ export const env = {
   JWT_SECRET: getEnv("JWT_SECRET"),
   MONGODB_URI: getEnv("MONGODB_URI"),
   PORT: port,
+  OTRUYEN_API_URL: getEnv("OTRUYEN_API_URL", "https://otruyenapi.com/v1/api"),
 } as const;

@@ -11,6 +11,7 @@ import { requestLogger } from "@/middleware/request-logger.ts";
 import documentRoutes from "@/routes/document.routes.ts";
 import userRoutes from "@/routes/user.routes.ts";
 import authRoutes from "@/routes/auth.routes.ts";
+import otruyenRoutes from "@/routes/otruyen.routes.ts";
 import { logger } from "@/utils/logger.ts";
 
 const app = express();
@@ -36,6 +37,7 @@ registerDocs(app);
 
 app.use("/api", authRoutes);
 app.use("/api", userRoutes);
+app.use("/api", otruyenRoutes);
 app.use("/api", documentRoutes);
 app.use("/uploads", express.static("uploads"));
 app.get("/", rootHandler);
