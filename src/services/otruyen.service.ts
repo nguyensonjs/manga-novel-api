@@ -2,7 +2,12 @@ import { env } from "@/config/env.ts";
 import { HTTP_STATUS } from "@/constants/http-status.ts";
 import { HttpError } from "@/utils/http-error.ts";
 
-export const fetchFromOTruyen = async (path: string, query: any, method: string, body?: any) => {
+export const fetchFromOTruyen = async <T = any>(
+  path: string,
+  query: any,
+  method: string,
+  body?: any,
+): Promise<T> => {
   // Get the path from the request and remove the leading /otruyen
   const targetPath = path.replace(/^\/otruyen/, "");
   
@@ -27,5 +32,5 @@ export const fetchFromOTruyen = async (path: string, query: any, method: string,
     );
   }
 
-  return await response.json();
+  return (await response.json()) as T;
 };

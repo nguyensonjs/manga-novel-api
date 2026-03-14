@@ -105,6 +105,10 @@ export const swaggerSpec: OpenApiSpec = {
       name: "Documents",
       description: "Document upload and file viewing endpoints",
     },
+    {
+      name: "Comics Local",
+      description: "Local storage for comics synced from OTruyen",
+    },
   ],
   components: {
     securitySchemes: {
@@ -817,6 +821,58 @@ export const swaggerSpec: OpenApiSpec = {
                 },
               },
             },
+          },
+        },
+      },
+    },
+    "/api/comics": {
+      get: {
+        summary: "Get local comics list",
+        tags: ["Comics Local"],
+        responses: {
+          "200": {
+            description: "Successful operation",
+          },
+        },
+      },
+    },
+    "/api/comics/sync": {
+      post: {
+        summary: "Sync latest comics from OTruyen to local DB",
+        tags: ["Comics Local"],
+        parameters: [
+          {
+            name: "page",
+            in: "query",
+            required: false,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: {
+          "200": {
+            description: "Synchronization results",
+          },
+        },
+      },
+    },
+    "/api/comics/{slug}": {
+      get: {
+        summary: "Get local comic details by slug",
+        tags: ["Comics Local"],
+        parameters: [
+          {
+            name: "slug",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+          },
+        ],
+        responses: {
+          "200": {
+            description: "Successful operation",
+          },
+          "404": {
+            description: "Comic not found",
           },
         },
       },

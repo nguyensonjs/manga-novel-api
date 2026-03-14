@@ -60,7 +60,32 @@ curl "http://localhost:3333/api/otruyen/tim-kiem?keyword=naruto&page=1"
 
 ---
 
-### 3. Quản lý tài liệu (Documents)
+### 3. Lưu trữ & Quản lý truyện local (Comics Local)
+
+Dữ liệu được đồng bộ từ OTruyen về database riêng để tùy chỉnh và tăng tốc độ.
+
+#### Đồng bộ truyện mới nhất
+```bash
+# Đồng bộ trang 1
+curl -X POST http://localhost:3333/api/comics/sync
+
+# Đồng bộ trang cụ thể
+curl -X POST "http://localhost:3333/api/comics/sync?page=2"
+```
+
+#### Lấy danh sách truyện trong DB local
+```bash
+curl http://localhost:3333/api/comics
+```
+
+#### Xem chi tiết truyện (Local)
+```bash
+curl http://localhost:3333/api/comics/dao-hai-tac
+```
+
+---
+
+### 4. Quản lý tài liệu (Documents)
 
 #### Tải lên tài liệu
 ```bash
@@ -93,6 +118,9 @@ curl -X POST http://localhost:3333/api/documents/upload/chunk \
 | GET | `/api/otruyen/danh-sach/:type` | Proxy | DS theo loại |
 | GET | `/api/otruyen/truyen-tranh/:slug` | Proxy | Chi tiết truyện |
 | GET | `/api/otruyen/tim-kiem` | Proxy | Tìm kiếm truyện |
+| POST | `/api/comics/sync` | Comics | Đồng bộ truyện |
+| GET | `/api/comics` | Comics | DS truyện local |
+| GET | `/api/comics/:slug` | Comics | Chi tiết truyện local |
 | POST | `/api/documents/upload` | Docs | Upload file |
 | POST | `/api/documents/upload/chunk` | Docs | Upload theo phần |
 | GET | `/api/documents/:id/view` | Docs | Xem file |
