@@ -355,7 +355,7 @@ export const swaggerSpec: OpenApiSpec = {
         },
       },
     },
-    "/api/register": {
+    "/api/auth/register": {
       post: {
         summary: "Register a new user",
         tags: ["Authentication"],
@@ -403,7 +403,7 @@ export const swaggerSpec: OpenApiSpec = {
         },
       },
     },
-    "/api/login": {
+    "/api/auth/login": {
       post: {
         summary: "Login and receive a JWT token",
         tags: ["Authentication"],
@@ -469,7 +469,7 @@ export const swaggerSpec: OpenApiSpec = {
         },
       },
     },
-    "/api/me": {
+    "/api/users/me": {
       get: {
         summary: "Get current authenticated user",
         tags: ["Users"],

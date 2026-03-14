@@ -11,7 +11,7 @@ import { asyncHandler } from "@/middleware/async-handler.ts";
 const router = express.Router();
 
 router.get("/me", auth, asyncHandler(getMe));
-router.get("/users", asyncHandler(getUsers));
-router.get("/users/:id", asyncHandler(getUserById));
+router.get("/", asyncHandler(getUsers));
+router.get("/:id", asyncHandler(getUserById));
 
 export default router;

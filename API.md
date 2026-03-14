@@ -13,14 +13,14 @@ curl http://localhost:3333/
 
 #### Đăng ký tài khoản
 ```bash
-curl -X POST http://localhost:3333/api/register \
+curl -X POST http://localhost:3333/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{"name":"Son","email":"son@example.com","password":"123456"}'
 ```
 
 #### Đăng nhập
 ```bash
-curl -X POST http://localhost:3333/api/login \
+curl -X POST http://localhost:3333/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"son@example.com","password":"123456"}'
 ```
@@ -28,7 +28,7 @@ curl -X POST http://localhost:3333/api/login \
 
 #### Lấy thông tin cá nhân
 ```bash
-curl http://localhost:3333/api/me -H "Authorization: Bearer <your-token>"
+curl http://localhost:3333/api/users/me -H "Authorization: Bearer <your-token>"
 ```
 
 ---
@@ -121,9 +121,9 @@ curl -X POST http://localhost:3333/api/documents/upload/chunk \
 | Method | Endpoint | Nhóm | Mô tả |
 |--------|----------|------|-------|
 | GET | `/` | System | Health check |
-| POST | `/api/register` | Auth | Đăng ký |
-| POST | `/api/login` | Auth | Đăng nhập |
-| GET | `/api/me` | Users | Profile cá nhân |
+| POST | `/api/auth/register` | Auth | Đăng ký |
+| POST | `/api/auth/login` | Auth | Đăng nhập |
+| GET | `/api/users/me` | Users | Profile cá nhân |
 | GET | `/api/users` | Users | Danh sách user |
 | GET | `/api/otruyen/home` | Proxy | Trang chủ truyện |
 | GET | `/api/otruyen/danh-sach/:type` | Proxy | DS theo loại |
