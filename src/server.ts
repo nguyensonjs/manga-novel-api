@@ -10,6 +10,7 @@ import { errorHandler } from "@/middleware/error-handler.ts";
 import { requestLogger } from "@/middleware/request-logger.ts";
 import documentRoutes from "@/routes/document.routes.ts";
 import userRoutes from "@/routes/user.routes.ts";
+import authRoutes from "@/routes/auth.routes.ts";
 import { logger } from "@/utils/logger.ts";
 
 const app = express();
@@ -33,6 +34,7 @@ app.use(express.json());
 
 registerDocs(app);
 
+app.use("/api", authRoutes);
 app.use("/api", userRoutes);
 app.use("/api", documentRoutes);
 app.use("/uploads", express.static("uploads"));
