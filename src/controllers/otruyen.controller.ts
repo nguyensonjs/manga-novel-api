@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
-import { env } from "@/config/env.ts";
 import { HTTP_STATUS } from "@/constants/http-status.ts";
+import * as otruyenService from "@/services/otruyen.service.ts";
 import { HttpError } from "@/utils/http-error.ts";
 
 /**
@@ -8,33 +8,12 @@ import { HttpError } from "@/utils/http-error.ts";
  */
 export const proxyOTruyen = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Get the path from the request and remove the leading /otruyen
-    // Example: /api/otruyen/home -> /home
-    const targetPath = req.path.replace(/^\/otruyen/, "");
-    
-    // Construct the target URL with query parameters
-    const queryString = new URLSearchParams(req.query as any).toString();
-    const targetUrl = `${env.OTRUYEN_API_URL}${targetPath}${queryString ? `?${queryString}` : ""}`;
-
-    const response = await fetch(targetUrl, {
-      method: req.method,
-      headers: {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-      },
-      // Forward body if it's a POST/PUT request
-      body: ["POST", "PUT", "PATCH"].includes(req.method) ? JSON.stringify(req.body) : undefined,
-    });
-
-    if (!response.ok) {
-      const errorData = (await response.json().catch(() => ({}))) as any;
-      throw new HttpError(
-        response.status,
-        errorData.message || `OTruyen API error: ${response.statusText}`
-      );
-    }
-
-    const data = await response.json();
+    const data = await otruyenService.fetchFromOTruyen(
+      req.path,
+      req.query,
+      req.method,
+      req.body
+    );
     res.status(HTTP_STATUS.OK).json(data);
   } catch (error) {
     if (error instanceof HttpError) {
