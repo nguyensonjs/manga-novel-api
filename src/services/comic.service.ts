@@ -158,6 +158,6 @@ export const getLocalComicBySlug = async (slug: string) => {
   const comic = await Comic.findOne({ slug, isDeleted: false }).lean();
   if (!comic) return null;
 
-  const chapters = await Chapter.find({ comicId: comic._id }).sort({ chapterNumber: -1 }).lean();
+  const chapters = await Chapter.find({ comicId: comic._id } as any).sort({ chapterNumber: -1 }).lean();
   return { ...comic, chapters };
 };
