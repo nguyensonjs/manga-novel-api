@@ -22,7 +22,62 @@ export const upsertComic = async (item: OTruyenItem) => {
   );
 };
 
-export const syncLatestComics = async (page: number = 1) => {
+export const syncChapters = async (comicId: string, servers: any[]) => {
+  for (const server of servers) {
+    for (const chap of server.server_data) {
+      // Fetch chapter images if available
+      let images: any[] = [];
+      try {
+        const chapDetail = (await fetch(chap.chapter_api_data).then((res) => res.json())) as any;
+        if (chapDetail && chapDetail.data && chapDetail.data.item) {
+          const serverImage = chapDetail.data.item.chapter_path;
+          images = chapDetail.data.item.chapter_image.map((img: any) => ({
+            fileName: img.image_file,
+            url: `${chapDetail.data.domain_cdn}/${serverImage}/${img.image_file}`,
+          }));
+        }
+      } catch (err) {
+        console.error(`[SYNC] Failed to fetch images for chapter ${chap.chapter_name}:`, (err as Error).message);
+      }
+
+      await Chapter.findOneAndUpdate(
+        { comicId: comicId as any, slug: chap.chapter_name } as any,
+        {
+          title: chap.chapter_title,
+          chapterNumber: parseFloat(chap.chapter_name) || 0,
+          serverName: server.server_name,
+          images: images
+        },
+        { upsert: true }
+      );
+      // Small delay between chapters to be safe
+      await new Promise((resolve) => setTimeout(resolve, 300));
+    }
+  }
+};
+
+export const syncComicDetails = async (slug: string) => {
+  const result = await fetchFromOTruyen<OTruyenResponse<{ item: OTruyenItem }>>(
+    `/truyen-tranh/${slug}`,
+    {},
+    "GET"
+  );
+  
+  if (!result.data || !result.data.item) {
+    throw new Error(`Could not fetch details for comic: ${slug}`);
+  }
+
+  const item = result.data.item;
+  const comic = await upsertComic(item);
+
+  if (item.chapters) {
+    await syncChapters(comic._id.toString(), item.chapters);
+  }
+
+  return comic;
+};
+
+export const syncLatestComics = async (page: number = 1, deepSync: boolean = false) => {
   const result = await fetchFromOTruyen<OTruyenResponse<{ items: OTruyenItem[]; params: { pagination: any } }>>(
     "/danh-sach/truyen-moi",
     { page },
@@ -36,7 +91,16 @@ export const syncLatestComics = async (page: number = 1) => {
 
   const syncResults = [];
   for (const item of result.data.items) {
-    const comic = await upsertComic(item);
+    let comic;
+    if (deepSync) {
+      console.log(`[SYNC] Deep syncing: ${item.slug}`);
+      comic = await syncComicDetails(item.slug);
+      // Delay 1.5s after each comic detail fetch
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+    } else {
+      comic = await upsertComic(item);
+    }
+
     syncResults.push({
       id: comic._id,
       title: comic.title,
@@ -56,14 +120,14 @@ export const syncAllComics = async (startPage: number = 1) => {
   let totalSynced = 0;
   let hasNext = true;
 
-  console.log(`[SYNC] Starting full sync from page ${startPage}...`);
+  console.log(`[SYNC] Starting full deep sync from page ${startPage}...`);
 
   while (hasNext) {
     try {
-      const result = await syncLatestComics(currentPage);
+      const result = await syncLatestComics(currentPage, true);
       totalSynced += result.totalSynced;
       
-      const { totalItems, totalItemsPerPage, currentPage: page } = result.pagination;
+      const { totalItems, totalItemsPerPage } = result.pagination;
       const totalPages = Math.ceil(totalItems / totalItemsPerPage);
 
       console.log(`[SYNC] Page ${currentPage}/${totalPages} completed. Synced ${totalSynced} items so far.`);
@@ -72,14 +136,13 @@ export const syncAllComics = async (startPage: number = 1) => {
         hasNext = false;
       } else {
         currentPage++;
-        // Thêm delay nhỏ để tránh bị rate limit hoặc quá tải
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        // Delay 3s between pages
+        await new Promise((resolve) => setTimeout(resolve, 3000));
       }
     } catch (error) {
       console.error(`[SYNC] Error at page ${currentPage}:`, (error as Error).message);
-      // Tiếp tục trang tiếp theo nếu lỗi 1 trang
       currentPage++;
-      if (currentPage > 2000) hasNext = false; // Guard
+      if (currentPage > 3000) hasNext = false; 
     }
   }
 
@@ -92,5 +155,9 @@ export const getLocalComics = async (query: any = {}) => {
 };
 
 export const getLocalComicBySlug = async (slug: string) => {
-  return await Comic.findOne({ slug, isDeleted: false });
+  const comic = await Comic.findOne({ slug, isDeleted: false }).lean();
+  if (!comic) return null;
+
+  const chapters = await Chapter.find({ comicId: comic._id }).sort({ chapterNumber: -1 }).lean();
+  return { ...comic, chapters };
 };
