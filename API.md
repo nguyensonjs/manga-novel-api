@@ -9,16 +9,9 @@ Tài liệu này cung cấp các ví dụ chi tiết để kiểm thử các end
 curl http://localhost:3333/
 ```
 
-### 1. Quản lý người dùng (Authentication & Users)
+### 1. Xác thực & Người dùng (Auth & Users)
 
 #### Đăng ký tài khoản
-**Windows PowerShell:**
-```powershell
-curl.exe -X POST http://localhost:3333/api/register `
-  -H "Content-Type: application/json" `
-  -d "{\"name\":\"Son\",\"email\":\"son@example.com\",\"password\":\"123456\"}"
-```
-**macOS/Linux:**
 ```bash
 curl -X POST http://localhost:3333/api/register \
   -H "Content-Type: application/json" \
@@ -31,27 +24,45 @@ curl -X POST http://localhost:3333/api/login \
   -H "Content-Type: application/json" \
   -d '{"email":"son@example.com","password":"123456"}'
 ```
-*Phản hồi sẽ trả về một `token`. Hãy sử dụng token này cho các yêu cầu cần xác thực.*
+*Phản hồi trả về `token` dùng cho các header `Authorization: Bearer <token>`.*
 
-#### Lấy thông tin cá nhân (Profile)
+#### Lấy thông tin cá nhân
 ```bash
 curl http://localhost:3333/api/me -H "Authorization: Bearer <your-token>"
 ```
 
-#### Danh sách & Chi tiết người dùng
-```bash
-# Tất cả người dùng
-curl http://localhost:3333/api/users
+---
 
-# Chi tiết theo ID
-curl http://localhost:3333/api/users/<user-id>
+### 2. OTruyen Proxy (Dữ liệu truyện tranh)
+
+Sử dụng backend làm trung gian để lấy dữ liệu từ OTruyen API.
+
+#### Lấy dữ liệu Trang chủ
+```bash
+curl http://localhost:3333/api/otruyen/home
+```
+
+#### Danh sách truyện theo loại
+`type` gồm: `truyen-moi`, `sap-ra-mat`, `dang-phat-hanh`, `hoan-thanh`.
+```bash
+curl "http://localhost:3333/api/otruyen/danh-sach/truyen-moi?page=1"
+```
+
+#### Chi tiết truyện tranh
+```bash
+curl http://localhost:3333/api/otruyen/truyen-tranh/dao-hai-tac
+```
+
+#### Tìm kiếm truyện
+```bash
+curl "http://localhost:3333/api/otruyen/tim-kiem?keyword=naruto&page=1"
 ```
 
 ---
 
-### 2. Quản lý tài liệu (Documents)
+### 3. Quản lý tài liệu (Documents)
 
-#### Tải lên tài liệu (Upload)
+#### Tải lên tài liệu
 ```bash
 curl -X POST http://localhost:3333/api/documents/upload \
   -H "Authorization: Bearer <your-token>" \
@@ -59,7 +70,6 @@ curl -X POST http://localhost:3333/api/documents/upload \
 ```
 
 #### Tải lên theo từng phần (Chunk Upload)
-Dùng cho file lớn. Cần lặp lại cho từng chunk.
 ```bash
 curl -X POST http://localhost:3333/api/documents/upload/chunk \
   -H "Authorization: Bearer <your-token>" \
@@ -70,30 +80,19 @@ curl -X POST http://localhost:3333/api/documents/upload/chunk \
   -F "totalChunks=5"
 ```
 
-#### Truy xuất tài liệu
-```bash
-# Danh sách tài liệu
-curl http://localhost:3333/api/documents
-
-# Metadata tài liệu
-curl http://localhost:3333/api/documents/<document-id>
-
-# Xem/Tải file trực tiếp
-curl http://localhost:3333/api/documents/<document-id>/view
-```
-
 ## Danh sách các Routes hiện có
 
-| Method | Endpoint | Mô tả |
-|--------|----------|-------|
-| GET | `/` | Health check |
-| POST | `/api/register` | Đăng ký tài khoản |
-| POST | `/api/login` | Đăng nhập nhận JWT |
-| GET | `/api/me` | Lấy profile cá nhân |
-| GET | `/api/users` | Danh sách người dùng |
-| GET | `/api/users/:id` | Chi tiết người dùng |
-| POST | `/api/documents/upload` | Upload file(s) |
-| POST | `/api/documents/upload/chunk` | Upload file lớn theo phần |
-| GET | `/api/documents` | Danh sách tài liệu |
-| GET | `/api/documents/:id` | Metadata tài liệu |
-| GET | `/api/documents/:id/view` | Xem file tài liệu |
+| Method | Endpoint | Nhóm | Mô tả |
+|--------|----------|------|-------|
+| GET | `/` | System | Health check |
+| POST | `/api/register` | Auth | Đăng ký |
+| POST | `/api/login` | Auth | Đăng nhập |
+| GET | `/api/me` | Users | Profile cá nhân |
+| GET | `/api/users` | Users | Danh sách user |
+| GET | `/api/otruyen/home` | Proxy | Trang chủ truyện |
+| GET | `/api/otruyen/danh-sach/:type` | Proxy | DS theo loại |
+| GET | `/api/otruyen/truyen-tranh/:slug` | Proxy | Chi tiết truyện |
+| GET | `/api/otruyen/tim-kiem` | Proxy | Tìm kiếm truyện |
+| POST | `/api/documents/upload` | Docs | Upload file |
+| POST | `/api/documents/upload/chunk` | Docs | Upload theo phần |
+| GET | `/api/documents/:id/view` | Docs | Xem file |
