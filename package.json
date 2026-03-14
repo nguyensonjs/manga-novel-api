@@ -1,5 +1,5 @@
 {
-  "name": "node-api-course",
+  "name": "manga-novel-api",
   "main": "src/server.ts",
   "type": "module",
   "private": true,

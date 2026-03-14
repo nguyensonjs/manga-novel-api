@@ -1,4 +1,4 @@
-# node-api-course
+# manga-novel-api
 
 Dự án API Node.js nhanh chóng và mạnh mẽ được xây dựng bằng **Bun**, **TypeScript**, và **Express**.
 
