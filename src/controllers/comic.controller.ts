@@ -11,6 +11,17 @@ export const syncLatest = async (req: Request, res: Response): Promise<void> => 
   });
 };
 
+export const syncAll = async (req: Request, res: Response): Promise<void> => {
+  const startPage = Number(req.query.page) || 1;
+  // Chạy background sync
+  comicService.syncAllComics(startPage).catch(console.error);
+  
+  res.status(HTTP_STATUS.ACCEPTED).json({
+    message: "Full synchronization started in background",
+    startPage,
+  });
+};
+
 export const getComics = async (req: Request, res: Response): Promise<void> => {
   const comics = await comicService.getLocalComics(req.query);
   res.status(HTTP_STATUS.OK).json(comics);

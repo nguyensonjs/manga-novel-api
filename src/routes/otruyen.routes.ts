@@ -6,6 +6,6 @@ const router = express.Router();
 
 // Catch all routes and pass to proxy
 // Matches: /api/otruyen/*
-router.get("/otruyen*", asyncHandler(proxyOTruyen));
+router.get(/\/otruyen.*/, asyncHandler(proxyOTruyen));
 
 export default router;
