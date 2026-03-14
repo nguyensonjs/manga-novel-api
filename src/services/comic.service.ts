@@ -1,3 +1,4 @@
+import { logger } from "@/utils/logger.ts";
 import Comic from "@/models/comic.model.ts";
 import Chapter from "@/models/chapter.model.ts";
 import { fetchFromOTruyen } from "./otruyen.service.ts";
@@ -37,7 +38,7 @@ export const syncChapters = async (comicId: string, servers: any[]) => {
           }));
         }
       } catch (err) {
-        console.error(`[SYNC] Failed to fetch images for chapter ${chap.chapter_name}:`, (err as Error).message);
+        logger.error(`[SYNC] Failed to fetch images for chapter ${chap.chapter_name}: ${(err as Error).message}`);
       }
 
       await Chapter.findOneAndUpdate(
@@ -85,7 +86,7 @@ export const syncLatestComics = async (page: number = 1, deepSync: boolean = fal
   );
 
   if (!result.data || !result.data.items) {
-    console.error("[SYNC] Invalid data received:", JSON.stringify(result));
+    logger.error(`[SYNC] Invalid data received: ${JSON.stringify(result)}`);
     throw new Error("Invalid data received from OTruyen");
   }
 
@@ -93,6 +94,7 @@ export const syncLatestComics = async (page: number = 1, deepSync: boolean = fal
   for (const item of result.data.items) {
     let comic;
     if (deepSync) {
+      logger.info(`[SYNC] Deep syncing (${page}): ${item.name} (${item.slug})`);
       console.log(`[SYNC] Deep syncing (${page}): ${item.name} (${item.slug})`);
       comic = await syncComicDetails(item.slug);
       // Delay 1.5s after each comic detail fetch
@@ -120,6 +122,7 @@ export const syncAllComics = async (startPage: number = 1) => {
   let totalSynced = 0;
   let hasNext = true;
 
+  logger.info(`[SYNC] Starting full deep sync from page ${startPage}...`);
   console.log(`[SYNC] Starting full deep sync from page ${startPage}...`);
 
   while (hasNext) {
@@ -130,6 +133,7 @@ export const syncAllComics = async (startPage: number = 1) => {
       const { totalItems, totalItemsPerPage } = result.pagination;
       const totalPages = Math.ceil(totalItems / totalItemsPerPage);
 
+      logger.info(`[SYNC] Page ${currentPage}/${totalPages} completed. Synced ${totalSynced} items so far.`);
       console.log(`[SYNC] Page ${currentPage}/${totalPages} completed. Synced ${totalSynced} items so far.`);
 
       if (currentPage >= totalPages) {
@@ -140,13 +144,13 @@ export const syncAllComics = async (startPage: number = 1) => {
         await new Promise((resolve) => setTimeout(resolve, 3000));
       }
     } catch (error) {
-      console.error(`[SYNC] Error at page ${currentPage}:`, (error as Error).message);
+      logger.error(`[SYNC] Error at page ${currentPage}: ${(error as Error).message}`);
       currentPage++;
       if (currentPage > 3000) hasNext = false;
     }
   }
 
-  console.log(`[SYNC] Full sync finished. Total synced: ${totalSynced}`);
+  logger.info(`[SYNC] Full sync finished. Total synced: ${totalSynced}`);
   return { totalSynced };
 };
 
@@ -155,7 +159,7 @@ export const syncNewOnly = async () => {
   let totalSynced = 0;
   let shouldContinue = true;
 
-  console.log("[SYNC] Starting smart update (New Only)...");
+  logger.info("[SYNC] Starting smart update (New Only)...");
 
   while (shouldContinue) {
     const result = await fetchFromOTruyen<OTruyenResponse<{ items: OTruyenItem[]; params: { pagination: any } }>>(
@@ -171,12 +175,12 @@ export const syncNewOnly = async () => {
 
       // Nếu đã tồn tại và ngày cập nhật trùng khớp -> Dừng lại vì các truyện sau đó chắc chắn đã cũ
       if (existing && existing.lastUpdateOTruyen?.getTime() === new Date(item.updatedAt).getTime()) {
-        console.log(`[SYNC] Reached existing comic: ${item.slug}. Stopping smart update.`);
+        logger.info(`[SYNC] Reached existing comic: ${item.slug}. Stopping smart update.`);
         shouldContinue = false;
         break;
       }
 
-      console.log(`[SYNC] Updating/Creating: ${item.slug}`);
+      logger.info(`[SYNC] Updating/Creating: ${item.slug}`);
       await syncComicDetails(item.slug);
       totalSynced++;
 
@@ -186,12 +190,12 @@ export const syncNewOnly = async () => {
 
     if (shouldContinue) {
       currentPage++;
-      console.log(`[SYNC] Smart update moving to page ${currentPage}...`);
+      logger.info(`[SYNC] Smart update moving to page ${currentPage}...`);
       await new Promise((resolve) => setTimeout(resolve, 3000));
     }
   }
 
-  console.log(`[SYNC] Smart update finished. Total updated: ${totalSynced}`);
+  logger.info(`[SYNC] Smart update finished. Total updated: ${totalSynced}`);
   return { totalSynced };
 };
 

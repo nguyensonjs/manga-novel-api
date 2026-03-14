@@ -14,6 +14,6 @@ router.use(authRoutes);
 router.use(userRoutes);
 router.use(otruyenRoutes);
 router.use(documentRoutes);
-router.use(comicRoutes);
+router.use("/comics", comicRoutes);
 
 export default router;

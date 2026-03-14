@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { HTTP_STATUS } from "@/constants/http-status.ts";
 import * as ComicService from "@/services/comic.service.ts";
+import { logger } from "@/utils/logger.ts";
 
 export const syncLatest = async (req: Request, res: Response) => {
   const result = await ComicService.syncLatestComics();
@@ -9,8 +10,12 @@ export const syncLatest = async (req: Request, res: Response) => {
 
 export const syncAll = async (req: Request, res: Response) => {
   const page = parseInt(req.query.page as string) || 1;
+  logger.info(`[CONTROLLER] Triggering syncAllComics for page ${page}`);
   // Background job
-  ComicService.syncAllComics(page);
+  ComicService.syncAllComics(page).catch((err) => {
+    logger.error(`[SYNC-ALL ERROR] ${err.message}`);
+    console.error(`[SYNC-ALL ERROR] ${err.message}`);
+  });
   res.status(HTTP_STATUS.ACCEPTED).json({ message: "Full synchronization started in background", startPage: page });
 };
 

@@ -4,10 +4,10 @@ import { asyncHandler } from "@/middleware/async-handler.ts";
 
 const router = express.Router();
 
-router.get("/comics", asyncHandler(comicController.listComics));
-router.post("/comics/sync", asyncHandler(comicController.syncLatest));
-router.post("/comics/sync-all", asyncHandler(comicController.syncAll));
-router.post("/comics/sync-new", asyncHandler(comicController.syncNew));
-router.get("/comics/:slug", asyncHandler(comicController.getComic));
+router.get("/", asyncHandler(comicController.listComics));
+router.post("/sync", asyncHandler(comicController.syncLatest));
+router.post("/sync-all", asyncHandler(comicController.syncAll));
+router.post("/sync-new", asyncHandler(comicController.syncNew));
+router.get("/:slug", asyncHandler(comicController.getComic));
 
 export default router;
