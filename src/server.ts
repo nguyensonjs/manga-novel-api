@@ -8,10 +8,7 @@ import { HTTP_STATUS } from "@/constants/http-status.ts";
 import { registerDocs } from "@/docs/register-docs.ts";
 import { errorHandler } from "@/middleware/error-handler.ts";
 import { requestLogger } from "@/middleware/request-logger.ts";
-import documentRoutes from "@/routes/document.routes.ts";
-import userRoutes from "@/routes/user.routes.ts";
-import authRoutes from "@/routes/auth.routes.ts";
-import otruyenRoutes from "@/routes/otruyen.routes.ts";
+import apiRoutes from "@/routes/index.ts";
 import { logger } from "@/utils/logger.ts";
 
 const app = express();
@@ -35,10 +32,7 @@ app.use(express.json());
 
 registerDocs(app);
 
-app.use("/api", authRoutes);
-app.use("/api", userRoutes);
-app.use("/api", otruyenRoutes);
-app.use("/api", documentRoutes);
+app.use("/api", apiRoutes);
 app.use("/uploads", express.static("uploads"));
 app.get("/", rootHandler);
 app.use(errorHandler);
