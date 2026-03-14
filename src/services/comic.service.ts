@@ -18,7 +18,7 @@ export const upsertComic = async (item: OTruyenItem) => {
       lastUpdateOTruyen: new Date(item.updatedAt),
       isDeleted: false,
     },
-    { upsert: true, new: true }
+    { upsert: true, returnDocument: "after" }
   );
 };
 
