@@ -43,9 +43,12 @@ export const syncChapters = async (comicId: string, servers: any[], comicTitle?:
         }
       } catch (err) {
         logger.error(`[SYNC] Failed to fetch images for chapter ${chap.chapter_name}: ${(err as Error).message}`);
+        console.error(`[SYNC] [ERROR] Chapter ${chap.chapter_name}: ${(err as Error).message}`);
       }
 
-      logger.info(`[SYNC] [${comicTitle || "Comic"}] Chapter ${chapCount}/${totalChaps} (${chap.chapter_name}) Saving...`);
+      const progress = `[SYNC] [${comicTitle || "Comic"}] Chapter ${chapCount}/${totalChaps} (${chap.chapter_name}) Saving...`;
+      logger.info(progress);
+      console.log(progress);
 
       await Chapter.findOneAndUpdate(
         { comicId: comicId as any, slug: chap.chapter_name } as any,
@@ -81,7 +84,9 @@ export const syncComicDetails = async (slug: string) => {
     await syncChapters(comic._id.toString(), item.chapters, item.name);
   }
 
-  logger.info(`[SYNC] [DONE] Completed syncing: ${item.name}`);
+  const doneMsg = `[SYNC] [DONE] Completed syncing: ${item.name}`;
+  logger.info(doneMsg);
+  console.log(doneMsg);
   return comic;
 };
 
@@ -103,7 +108,9 @@ export const syncLatestComics = async (page: number = 1, deepSync: boolean = fal
     itemIdx++;
     let comic;
     if (deepSync) {
-      logger.info(`[SYNC] [PAGE ${page}] Comic ${itemIdx}/20: ${item.name}`);
+      const pageInfo = `[SYNC] [PAGE ${page}] Comic ${itemIdx}/20: ${item.name}`;
+      logger.info(pageInfo);
+      console.log(pageInfo);
       comic = await syncComicDetails(item.slug);
       // Delay 1.5s after each comic detail fetch
       await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -130,7 +137,9 @@ export const syncAllComics = async (startPage: number = 1) => {
   let totalSynced = 0;
   let hasNext = true;
 
-  logger.info(`[SYNC] Starting full deep sync from page ${startPage}...`);
+  const startMsg = `[SYNC] Starting full deep sync from page ${startPage}...`;
+  logger.info(startMsg);
+  console.log(startMsg);
   await saveSyncState({ lastPage: currentPage, status: "ongoing" });
 
   while (hasNext) {
