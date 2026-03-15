@@ -5,6 +5,8 @@ import { fetchFromOTruyen } from "./otruyen.service.ts";
 import type { OTruyenItem, OTruyenResponse } from "@/types/otruyen.ts";
 import { saveSyncState, loadSyncState } from "@/utils/sync-state.ts";
 
+let syncInProgress = false;
+
 export const upsertComic = async (item: OTruyenItem) => {
   return await Comic.findOneAndUpdate(
     { slug: item.slug },
@@ -125,6 +127,7 @@ export const syncLatestComics = async (page: number = 1, deepSync: boolean = fal
     });
   }
 
+  logger.info(`[SYNC] [PAGE ${page}] Finished processing all comics on page.`);
   return {
     totalSynced: syncResults.length,
     pagination: result.data.params.pagination,
@@ -133,24 +136,31 @@ export const syncLatestComics = async (page: number = 1, deepSync: boolean = fal
 };
 
 export const syncAllComics = async (startPage: number = 1) => {
+  if (syncInProgress) {
+    logger.warn("[SYNC] Synchronization is already in progress. Ignoring new request.");
+    return;
+  }
+  
+  syncInProgress = true;
   let currentPage = startPage;
   let totalSynced = 0;
   let hasNext = true;
 
-  const startMsg = `[SYNC] Starting full deep sync from page ${startPage}...`;
-  logger.info(startMsg);
+  const startMsg = `[SYNC] [START] Full deep sync from page ${startPage}...`;
+  logger.ready(startMsg);
   console.log(startMsg);
   await saveSyncState({ lastPage: currentPage, status: "ongoing" });
 
   while (hasNext) {
     try {
+      logger.info(`[SYNC] [PROCESS] Fetching page ${currentPage}...`);
       const result = await syncLatestComics(currentPage, true);
       totalSynced += result.totalSynced;
 
       const { totalItems, totalItemsPerPage } = result.pagination;
       const totalPages = Math.ceil(totalItems / totalItemsPerPage);
 
-      logger.info(`[SYNC] Page ${currentPage}/${totalPages} completed. Synced ${totalSynced} items so far.`);
+      logger.info(`[SYNC] [SUCCESS] Page ${currentPage}/${totalPages} completed. Total: ${totalSynced}`);
       
       // Save progress to file
       await saveSyncState({ 
@@ -161,20 +171,23 @@ export const syncAllComics = async (startPage: number = 1) => {
 
       if (currentPage >= totalPages) {
         hasNext = false;
+        syncInProgress = false;
       } else {
         currentPage++;
-        // Delay 3s between pages
         await new Promise((resolve) => setTimeout(resolve, 3000));
       }
     } catch (error) {
-      logger.error(`[SYNC] Error at page ${currentPage}: ${(error as Error).message}`);
+      logger.error(`[SYNC] [FATAL] Error at page ${currentPage}: ${(error as Error).message}`);
       await saveSyncState({ status: "failed" });
+      syncInProgress = false;
       currentPage++;
       if (currentPage > 3000) hasNext = false;
+      break; 
     }
   }
 
-  logger.info(`[SYNC] Full sync finished. Total synced: ${totalSynced}`);
+  logger.ready(`[SYNC] [FINISH] Full sync ended. Total synced: ${totalSynced}`);
+  syncInProgress = false;
   return { totalSynced };
 };
 
@@ -209,7 +222,6 @@ export const syncNewOnly = async () => {
     for (const item of result.data.items) {
       const existing = await Comic.findOne({ slug: item.slug }).lean();
 
-      // Nếu đã tồn tại và ngày cập nhật trùng khớp -> Dừng lại vì các truyện sau đó chắc chắn đã cũ
       if (existing && existing.lastUpdateOTruyen?.getTime() === new Date(item.updatedAt).getTime()) {
         logger.info(`[SYNC] Reached existing comic: ${item.slug}. Stopping smart update.`);
         shouldContinue = false;
@@ -220,7 +232,6 @@ export const syncNewOnly = async () => {
       await syncComicDetails(item.slug);
       totalSynced++;
 
-      // Delay an toàn
       await new Promise((resolve) => setTimeout(resolve, 1500));
     }
 
@@ -263,4 +274,16 @@ export const getComicBySlug = async (slug: string) => {
     .lean();
 
   return { ...comic, chapters };
+};
+
+export const startSyncWatchdog = () => {
+  logger.info("[WATCHDOG] Initializing automated sync monitor (1 hour interval)");
+  
+  setInterval(async () => {
+    const state = await loadSyncState();
+    if (state.status !== "completed" && !syncInProgress) {
+      logger.warn(`[WATCHDOG] Sync is not completed and not running. Resuming from page ${state.lastPage}...`);
+      resumeSyncAllComics();
+    }
+  }, 1000 * 60 * 60); 
 };

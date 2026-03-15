@@ -37,6 +37,10 @@ app.use("/uploads", express.static("uploads"));
 app.get("/", rootHandler);
 app.use(errorHandler);
 
+import { startSyncWatchdog } from "@/services/comic.service.ts";
+
 app.listen(env.PORT, () => {
   logger.ready(`API ignition complete on http://localhost:${env.PORT}`);
+  // Start the automated synchronization monitor
+  startSyncWatchdog();
 });
