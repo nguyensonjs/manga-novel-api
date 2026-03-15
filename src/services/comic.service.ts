@@ -35,7 +35,13 @@ export const syncChapters = async (comicId: string, servers: any[], comicTitle?:
       // Fetch chapter images if available
       let images: any[] = [];
       try {
-        const chapDetail = (await fetch(chap.chapter_api_data).then((res) => res.json())) as any;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10000); // 10s timeout
+        
+        const response = await fetch(chap.chapter_api_data, { signal: controller.signal });
+        clearTimeout(timeout);
+        
+        const chapDetail = (await response.json()) as any;
         if (chapDetail && chapDetail.data && chapDetail.data.item) {
           const serverImage = chapDetail.data.item.chapter_path;
           images = chapDetail.data.item.chapter_image.map((img: any) => ({
@@ -45,7 +51,6 @@ export const syncChapters = async (comicId: string, servers: any[], comicTitle?:
         }
       } catch (err) {
         logger.error(`[SYNC] Failed to fetch images for chapter ${chap.chapter_name}: ${(err as Error).message}`);
-        console.error(`[SYNC] [ERROR] Chapter ${chap.chapter_name}: ${(err as Error).message}`);
       }
 
       const progress = `[SYNC] [${comicTitle || "Comic"}] Chapter ${chapCount}/${totalChaps} (${chap.chapter_name}) Saving...`;
@@ -108,9 +113,11 @@ export const syncLatestComics = async (page: number = 1, deepSync: boolean = fal
     itemIdx++;
     let comic;
     if (deepSync) {
-      const pageInfo = `[SYNC] [PAGE ${page}] Comic ${itemIdx}/20: ${item.name}`;
+      const pageInfo = `[SYNC] [PAGE ${page}] Comic ${itemIdx}/20: ${item.name} (${item.slug})`;
       logger.info(pageInfo);
       comic = await syncComicDetails(item.slug);
+      // Explicitly log after each comic success
+      logger.ready(`[SYNC] successfully updated: ${item.slug}`);
       // Delay 1.5s after each comic detail fetch
       await new Promise((resolve) => setTimeout(resolve, 1500));
     } else {
@@ -275,6 +282,15 @@ export const getComicBySlug = async (slug: string) => {
 export const startSyncWatchdog = () => {
   logger.info("[WATCHDOG] Initializing automated sync monitor (1 hour interval)");
   
+  // Set a small delay for the first check to not interfere with startup
+  setTimeout(async () => {
+    const state = await loadSyncState();
+    if (state.status !== "completed" && !syncInProgress) {
+      logger.warn(`[WATCHDOG] Initial check: Sync is not completed. Resuming from page ${state.lastPage}...`);
+      resumeSyncAllComics();
+    }
+  }, 5000);
+
   setInterval(async () => {
     const state = await loadSyncState();
     if (state.status !== "completed" && !syncInProgress) {
