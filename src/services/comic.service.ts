@@ -50,7 +50,6 @@ export const syncChapters = async (comicId: string, servers: any[], comicTitle?:
 
       const progress = `[SYNC] [${comicTitle || "Comic"}] Chapter ${chapCount}/${totalChaps} (${chap.chapter_name}) Saving...`;
       logger.info(progress);
-      console.log(progress);
 
       await Chapter.findOneAndUpdate(
         { comicId: comicId as any, slug: chap.chapter_name } as any,
@@ -88,7 +87,6 @@ export const syncComicDetails = async (slug: string) => {
 
   const doneMsg = `[SYNC] [DONE] Completed syncing: ${item.name}`;
   logger.info(doneMsg);
-  console.log(doneMsg);
   return comic;
 };
 
@@ -112,7 +110,6 @@ export const syncLatestComics = async (page: number = 1, deepSync: boolean = fal
     if (deepSync) {
       const pageInfo = `[SYNC] [PAGE ${page}] Comic ${itemIdx}/20: ${item.name}`;
       logger.info(pageInfo);
-      console.log(pageInfo);
       comic = await syncComicDetails(item.slug);
       // Delay 1.5s after each comic detail fetch
       await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -148,7 +145,6 @@ export const syncAllComics = async (startPage: number = 1) => {
 
   const startMsg = `[SYNC] [START] Full deep sync from page ${startPage}...`;
   logger.ready(startMsg);
-  console.log(startMsg);
   await saveSyncState({ lastPage: currentPage, status: "ongoing" });
 
   while (hasNext) {

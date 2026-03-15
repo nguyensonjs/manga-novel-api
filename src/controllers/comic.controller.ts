@@ -25,7 +25,6 @@ export const syncNew = async (req: Request, res: Response) => {
 };
 
 export const resumeSync = async (req: Request, res: Response) => {
-  console.log(">>> RESUME SYNC REQUEST RECEIVED");
   logger.info("[CONTROLLER] Resuming sync from state file");
   // Background job
   ComicService.resumeSyncAllComics().catch((err) => {
