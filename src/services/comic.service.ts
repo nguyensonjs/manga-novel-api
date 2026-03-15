@@ -97,6 +97,7 @@ export const syncLatestComics = async (page: number = 1, deepSync: boolean = fal
     throw new Error("Invalid data received from OTruyen");
   }
 
+  const syncResults = [];
   let itemIdx = 0;
   for (const item of result.data.items) {
     itemIdx++;
