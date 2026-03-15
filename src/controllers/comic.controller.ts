@@ -24,6 +24,15 @@ export const syncNew = async (req: Request, res: Response) => {
   res.status(HTTP_STATUS.ACCEPTED).json({ message: "Smart sync (New Only) started in background" });
 };
 
+export const resumeSync = async (req: Request, res: Response) => {
+  logger.info("[CONTROLLER] Resuming sync from state file");
+  // Background job
+  ComicService.resumeSyncAllComics().catch((err) => {
+    logger.error(`[RESUME SYNC ERROR] ${err.message}`);
+  });
+  res.status(HTTP_STATUS.ACCEPTED).json({ message: "Resuming synchronization from last saved state" });
+};
+
 export const listComics = async (req: Request, res: Response) => {
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 20;

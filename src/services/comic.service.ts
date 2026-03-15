@@ -3,6 +3,7 @@ import Comic from "@/models/comic.model.ts";
 import Chapter from "@/models/chapter.model.ts";
 import { fetchFromOTruyen } from "./otruyen.service.ts";
 import type { OTruyenItem, OTruyenResponse } from "@/types/otruyen.ts";
+import { saveSyncState, loadSyncState } from "@/utils/sync-state.ts";
 
 export const upsertComic = async (item: OTruyenItem) => {
   return await Comic.findOneAndUpdate(
@@ -23,9 +24,12 @@ export const upsertComic = async (item: OTruyenItem) => {
   );
 };
 
-export const syncChapters = async (comicId: string, servers: any[]) => {
+export const syncChapters = async (comicId: string, servers: any[], comicTitle?: string) => {
   for (const server of servers) {
+    const totalChaps = server.server_data.length;
+    let chapCount = 0;
     for (const chap of server.server_data) {
+      chapCount++;
       // Fetch chapter images if available
       let images: any[] = [];
       try {
@@ -40,6 +44,8 @@ export const syncChapters = async (comicId: string, servers: any[]) => {
       } catch (err) {
         logger.error(`[SYNC] Failed to fetch images for chapter ${chap.chapter_name}: ${(err as Error).message}`);
       }
+
+      logger.info(`[SYNC] [${comicTitle || "Comic"}] Chapter ${chapCount}/${totalChaps} (${chap.chapter_name}) Saving...`);
 
       await Chapter.findOneAndUpdate(
         { comicId: comicId as any, slug: chap.chapter_name } as any,
@@ -72,9 +78,10 @@ export const syncComicDetails = async (slug: string) => {
   const comic = await upsertComic(item);
 
   if (item.chapters) {
-    await syncChapters(comic._id.toString(), item.chapters);
+    await syncChapters(comic._id.toString(), item.chapters, item.name);
   }
 
+  logger.info(`[SYNC] [DONE] Completed syncing: ${item.name}`);
   return comic;
 };
 
@@ -90,11 +97,12 @@ export const syncLatestComics = async (page: number = 1, deepSync: boolean = fal
     throw new Error("Invalid data received from OTruyen");
   }
 
-  const syncResults = [];
+  let itemIdx = 0;
   for (const item of result.data.items) {
+    itemIdx++;
     let comic;
     if (deepSync) {
-      logger.info(`[SYNC] Deep syncing (${page}): ${item.name} (${item.slug})`);
+      logger.info(`[SYNC] [PAGE ${page}] Comic ${itemIdx}/20: ${item.name}`);
       comic = await syncComicDetails(item.slug);
       // Delay 1.5s after each comic detail fetch
       await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -122,6 +130,7 @@ export const syncAllComics = async (startPage: number = 1) => {
   let hasNext = true;
 
   logger.info(`[SYNC] Starting full deep sync from page ${startPage}...`);
+  await saveSyncState({ lastPage: currentPage, status: "ongoing" });
 
   while (hasNext) {
     try {
@@ -132,6 +141,13 @@ export const syncAllComics = async (startPage: number = 1) => {
       const totalPages = Math.ceil(totalItems / totalItemsPerPage);
 
       logger.info(`[SYNC] Page ${currentPage}/${totalPages} completed. Synced ${totalSynced} items so far.`);
+      
+      // Save progress to file
+      await saveSyncState({ 
+        lastPage: currentPage, 
+        totalSynced,
+        status: currentPage >= totalPages ? "completed" : "ongoing"
+      });
 
       if (currentPage >= totalPages) {
         hasNext = false;
@@ -142,6 +158,7 @@ export const syncAllComics = async (startPage: number = 1) => {
       }
     } catch (error) {
       logger.error(`[SYNC] Error at page ${currentPage}: ${(error as Error).message}`);
+      await saveSyncState({ status: "failed" });
       currentPage++;
       if (currentPage > 3000) hasNext = false;
     }
@@ -149,6 +166,18 @@ export const syncAllComics = async (startPage: number = 1) => {
 
   logger.info(`[SYNC] Full sync finished. Total synced: ${totalSynced}`);
   return { totalSynced };
+};
+
+export const resumeSyncAllComics = async () => {
+  const state = await loadSyncState();
+  if (state.status === "completed") {
+    logger.info("[SYNC] Previous sync was completed. Starting smart update instead.");
+    return syncNewOnly();
+  }
+  
+  const startPage = state.lastPage || 1;
+  logger.info(`[SYNC] Resuming sync from page ${startPage}...`);
+  return syncAllComics(startPage);
 };
 
 export const syncNewOnly = async () => {

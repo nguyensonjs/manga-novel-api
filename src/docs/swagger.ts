@@ -901,6 +901,17 @@ export const swaggerSpec: OpenApiSpec = {
         },
       },
     },
+    "/api/comics/sync-resume": {
+      post: {
+        summary: "Resume synchronization from last saved state in sync-state.json",
+        tags: ["Comics Local"],
+        responses: {
+          "202": {
+            description: "Synchronization resumed in background",
+          },
+        },
+      },
+    },
     "/api/comics/{slug}": {
       get: {
         summary: "Get local comic details by slug",
